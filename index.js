@@ -35,28 +35,74 @@ console.log('Will read file!'); */
 ///////////////////////////////
 // SERVER
 
+const replaceTemplate = (temp, product) => {
+  let output = temp.replace(/{%PRODUCTNAME%}/g, product.productName);
+  output = output.replace(/{%IMAGE%}/g, product.image);
+  output = output.replace(/{%PRICE%}/g, product.price);
+  output = output.replace(/{%FROM%}/g, product.from);
+  output = output.replace(/{%NUTRIENTS%}/g, product.nutrients);
+  output = output.replace(/{%QUANTITY%}/g, product.quantity);
+  output = output.replace(/{%DESCRIPTION%}/g, product.description);
+  output = output.replace(/{%ID%}/g, product.id);
+
+  if (!product.organic)
+    output = output.replace(/{%NOT_ORGANIC%}/g, 'not-organic');
+
+  return output;
+};
+
+const tempOverview = fs.readFileSync(
+  `${__dirname}/templates/template-overview.html`,
+  'utf-8',
+);
+const tempCard = fs.readFileSync(
+  `${__dirname}/templates/template-card.html`,
+  'utf-8',
+);
+const tempProduct = fs.readFileSync(
+  `${__dirname}/templates/template-product.html`,
+  'utf-8',
+);
+
 const data = fs.readFileSync(`${__dirname}/dev-data/data.json`, 'utf-8');
-const dataObject = JSON.parse(data);
+const dataObj = JSON.parse(data);
 
 const server = http.createServer((req, res) => {
-  // console.log(req);
-  const pathName = req.url;
+  const { query, pathname } = url.parse(req.url, true);
 
-  if (pathName === '/' || pathName === '/overview') {
-    res.end('This is the OVERVIEW');
-  } else if (pathName === '/product') {
-    res.end('This is the PRODUCT');
-  } else if (pathName === '/api') {
+  // Overview page
+  if (pathname === '/' || pathname === '/overview') {
+    res.writeHead(200, {
+      'Content-type': 'text/html',
+    });
+    const cardsHtml = dataObj
+      .map((el) => replaceTemplate(tempCard, el))
+      .join('');
+    const output = tempOverview.replace('{%PRODUCT_CARDS%}', cardsHtml);
+    res.end(output);
+
+    // Product page
+  } else if (pathname === '/product') {
+    res.writeHead(200, {
+      'Content-type': 'text/html',
+    });
+    const product = dataObj[query.id];
+    const output = replaceTemplate(tempProduct, product);
+    res.end(output);
+
+    // API
+  } else if (pathname === '/api') {
     res.writeHead(200, {
       'Content-type': 'application/json',
     });
     res.end(data);
+
+    // Not found
   } else {
     res.writeHead(404, {
       'Content-type': 'text/html',
       'my-own-header': 'hello-world',
     });
-    // res.end('Page not found!');
     res.end('<h1>Page not found!</h1>');
   }
 });
@@ -74,3 +120,7 @@ server.listen(8000, '127.0.0.1', () => {
 /* when the program runs we get two requests meaning the callback function executed twice, so when we are using a browser it automatically performs a request for the website's favicon and in our case we don't have a favicon so we can ignore it */
 
 /* something more that writeHead can do is to also send headers and to send headers we specify an object, an http header is basically a piece of information about the response that we sending back, and there are many different standard headers that we can specify to inform the browser or whatever client is receiving a response about the response itself, for example, one of the standard headers is to inform the browser of the content type and set it to html and just like that now the browser is actually expecting html */
+
+/* we have all the css styles inlined into our html pages so that we don't have to make multiple requests to getting these different data because each different file will trigger a different request, remember before where we had the request for the favicon, so we saw one request for the root meaning main page and one request for the favicon and what that means is that each asset, so each piece that is part of the website will get its own request and we will then have to handle that */
+
+/* parse is to basically parse the variables out of the url, we also need to pass true into the parse function in order to actually parse the query into an object, "?id=0" this is called a query string and that's what we are effectively parsing from the url */
