@@ -13,3 +13,9 @@ module.exports = (temp, product) => {
 
   return output;
 };
+
+/* we can create our own modules and export something from them like a function, and then import this function into another module and then use that function there */
+
+/* in node.js every single file is treated as a module */
+
+/* there are different ways of exporting something from a module and here we are gonna use module.exports, so in each module we have access to a variable called module and on there we can set the exports property and that we then set to whatever we want to export, and in our case its a anonymous function because it doesn't have a name */

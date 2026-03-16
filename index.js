@@ -2,6 +2,8 @@ const fs = require('fs');
 const http = require('http');
 const url = require('url');
 
+const slugify = require('slugify');
+
 const replaceTemplate = require('./modules/replaceTemplate');
 
 ///////////////////////////////
@@ -37,21 +39,14 @@ console.log('Will read file!'); */
 ///////////////////////////////
 // SERVER
 
-const tempOverview = fs.readFileSync(
-  `${__dirname}/templates/template-overview.html`,
-  'utf-8',
-);
-const tempCard = fs.readFileSync(
-  `${__dirname}/templates/template-card.html`,
-  'utf-8',
-);
-const tempProduct = fs.readFileSync(
-  `${__dirname}/templates/template-product.html`,
-  'utf-8',
-);
+const tempOverview = fs.readFileSync(`${__dirname}/templates/template-overview.html`, 'utf-8');
+const tempCard = fs.readFileSync(`${__dirname}/templates/template-card.html`, 'utf-8');
+const tempProduct = fs.readFileSync(`${__dirname}/templates/template-product.html`, 'utf-8');
 
 const data = fs.readFileSync(`${__dirname}/dev-data/data.json`, 'utf-8');
 const dataObj = JSON.parse(data);
+
+const slugs = dataObj.map((el) => slugify(el.productName, { lower: true }));
 
 const server = http.createServer((req, res) => {
   const { query, pathname } = url.parse(req.url, true);
@@ -61,9 +56,7 @@ const server = http.createServer((req, res) => {
     res.writeHead(200, {
       'Content-type': 'text/html',
     });
-    const cardsHtml = dataObj
-      .map((el) => replaceTemplate(tempCard, el))
-      .join('');
+    const cardsHtml = dataObj.map((el) => replaceTemplate(tempCard, el)).join('');
     const output = tempOverview.replace('{%PRODUCT_CARDS%}', cardsHtml);
     res.end(output);
 
@@ -110,3 +103,7 @@ server.listen(8000, '127.0.0.1', () => {
 /* we have all the css styles inlined into our html pages so that we don't have to make multiple requests to getting these different data because each different file will trigger a different request, remember before where we had the request for the favicon, so we saw one request for the root meaning main page and one request for the favicon and what that means is that each asset, so each piece that is part of the website will get its own request and we will then have to handle that */
 
 /* parse is to basically parse the variables out of the url, we also need to pass true into the parse function in order to actually parse the query into an object, "?id=0" this is called a query string and that's what we are effectively parsing from the url */
+
+/* require() comes from node.js’s older commonJS module system, while import/export comes from the modern ES modules standard used in browsers and modern node.js. */
+
+/* slug is basically just the last part of url that contains a unique string that identifies the resource that the website is displaying, common in blog posts, like we have "id=0" which doesn't make much sense or "blog-post-heading" a unique string which also makes sense instead of just a number which is not meaningful to us at all */
